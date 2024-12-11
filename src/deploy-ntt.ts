@@ -118,22 +118,29 @@ function parseArgs(): DeploymentConfig {
 }
 
 async function findNttKeypairFile(): Promise<string> {
-  const { stdout } = await execSync('ls -1 | grep -i "^ntt.*\.json$"', { 
-    encoding: 'utf8',
-    stdio: ['pipe', 'pipe', 'pipe'] 
-  });
-  
-  const files = stdout.trim().split('\n');
-  
-  if (!files || files.length === 0 || (files.length === 1 && files[0] === '')) {
-    throw new Error('No NTT keypair file found in current directory');
-  }
+  try {
+    const output = execSync('ls -1 | grep -i "^ntt.*\.json$"', { 
+      encoding: 'utf8',
+    });
+    
+    const files = output.trim().split('\n');
+    
+    if (!files || files.length === 0 || (files.length === 1 && files[0] === '')) {
+      throw new Error('No NTT keypair file found in current directory');
+    }
 
-  if (files.length > 1) {
-    throw new Error('Multiple NTT keypair files found. Please ensure only one exists.');
-  }
+    if (files.length > 1) {
+      throw new Error('Multiple NTT keypair files found. Please ensure only one exists.');
+    }
 
-  return files[0];
+    return files[0];
+  } catch (error) {
+    if ((error as any).status === 1) {
+      // grep returns status 1 when no matches found
+      throw new Error('No NTT keypair file found in current directory');
+    }
+    throw error;
+  }
 }
 
 async function prepareSolanaDeployment(config: DeploymentConfig) {
