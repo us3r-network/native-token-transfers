@@ -123,14 +123,15 @@ async function prepareSolanaDeployment(config: DeploymentConfig) {
   // Generate program keypair if in burning mode
   if (mode === 'burning') {
     console.log('Generating program keypair for burning mode...');
-    execSync('solana-keygen grind --starts-with ntt:1 --ignore-case', { stdio: 'inherit' });
-    
+    const programKeypair = execSync('solana-keygen grind --starts-with ntt:1 --ignore-case', { stdio: 'inherit' });
+    console.log('Program keypair:', programKeypair.toString().trim());
+
     // Get token authority PDA
-    const tokenAuthority = execSync(`ntt solana token-authority ${solanaToken}`).toString().trim();
+    const tokenAuthorityPDA = execSync(`ntt solana token-authority ${programKeypair}`).toString().trim();
     
     // Set mint authority
     console.log('Setting mint authority...');
-    execSync(`spl-token authorize ${solanaToken} mint ${tokenAuthority}`, { stdio: 'inherit' });
+    execSync(`spl-token authorize ${solanaToken} mint ${tokenAuthorityPDA}`, { stdio: 'inherit' });
   }
 }
 
