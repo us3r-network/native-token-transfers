@@ -143,7 +143,7 @@ async function findNttKeypairFile(): Promise<string> {
   }
 }
 
-async function prepareSolanaDeployment(config: DeploymentConfig) {
+async function prepareSolanaDeployment(config: DeploymentConfig): Promise<string> {
   const { solanaToken, mode } = config;
 
   // Generate program keypair if in burning mode
@@ -163,6 +163,7 @@ async function prepareSolanaDeployment(config: DeploymentConfig) {
     // Set mint authority
     console.log('Setting mint authority...');
     execSync(`spl-token authorize ${solanaToken} mint ${tokenAuthorityPDA}`, { stdio: 'inherit' });
+    return programKeypairFile;
   }
 }
 
@@ -194,17 +195,17 @@ async function deployNTT(config: DeploymentConfig) {
   writeFileSync('overrides.json', JSON.stringify(overrides, null, 2));
 
   // Prepare Solana deployment
-  await prepareSolanaDeployment(config);
+  const programKeypairFile = await prepareSolanaDeployment(config);
 
   console.log('Adding Solana chain...');
   execSync(
-    `ntt add-chain Solana --token ${solanaToken} --mode ${mode} --latest --payer ${solanaPayer}`,
+    `ntt add-chain Solana --token ${solanaToken} --mode ${mode} --latest --payer ${solanaPayer} --program-key ${programKeypairFile}`,
     { stdio: 'inherit' }
   );
 
   console.log('Adding Base chain...');
   execSync(
-    `ntt add-chain Base --token ${baseToken} --mode ${mode} --latest --skip-verify`,
+    `ntt add-chain BaseSepolia --token ${baseToken} --mode ${mode} --latest --skip-verify`,
     { stdio: 'inherit' }
   );
 
