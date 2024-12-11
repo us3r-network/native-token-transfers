@@ -156,7 +156,7 @@ async function prepareSolanaDeployment(config: DeploymentConfig) {
     console.log('Program keypair file:', programKeypairFile);
 
     // Get token authority PDA
-    const tokenAuthorityPDA = execSync(`ntt solana token-authority ${programKeypairFile}`).toString().trim();
+    const tokenAuthorityPDA = execSync(`ntt solana token-authority ${programKeypairFile}`).toString().trim().slice(0, -4);
     
     // Set mint authority
     console.log('Setting mint authority...');
