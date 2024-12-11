@@ -1181,10 +1181,10 @@ ${simulateArg} \
     if (out.includes("Simulated execution failed")) {
         if (out.includes("NotActivated")) {
             console.error("Simulation failed, likely because the token contract is compiled against a different EVM version. It's probably safe to continue without simulation.")
-            await askForConfirmation("Do you want to proceed with the deployment without simulation?");
+            //await askForConfirmation("Do you want to proceed with the deployment without simulation?");
         } else {
             console.error("Simulation failed. Please read the error message carefully, and proceed with caution.");
-            await askForConfirmation("Do you want to proceed with the deployment without simulation?");
+            //await askForConfirmation("Do you want to proceed with the deployment without simulation?");
         }
         out = await deploy(false);
     }
