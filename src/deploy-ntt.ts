@@ -117,17 +117,39 @@ function parseArgs(): DeploymentConfig {
   return config as DeploymentConfig;
 }
 
+async function findNttKeypairFile(): Promise<string> {
+  const { stdout } = await execSync('ls -1 | grep -i "^ntt.*\.json$"', { 
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'pipe'] 
+  });
+  
+  const files = stdout.trim().split('\n');
+  
+  if (!files || files.length === 0 || (files.length === 1 && files[0] === '')) {
+    throw new Error('No NTT keypair file found in current directory');
+  }
+
+  if (files.length > 1) {
+    throw new Error('Multiple NTT keypair files found. Please ensure only one exists.');
+  }
+
+  return files[0];
+}
+
 async function prepareSolanaDeployment(config: DeploymentConfig) {
   const { solanaToken, mode } = config;
 
   // Generate program keypair if in burning mode
   if (mode === 'burning') {
     console.log('Generating program keypair for burning mode...');
-    const programKeypair = execSync('solana-keygen grind --starts-with ntt:1 --ignore-case', { stdio: 'inherit' });
-    console.log('Program keypair:', programKeypair.toString().trim());
+    execSync('solana-keygen grind --starts-with ntt:1 --ignore-case', { stdio: 'inherit' });
+    
+    // Find the generated keypair file
+    const programKeypairFile = await findNttKeypairFile();
+    console.log('Program keypair file:', programKeypairFile);
 
     // Get token authority PDA
-    const tokenAuthorityPDA = execSync(`ntt solana token-authority ${programKeypair}`).toString().trim();
+    const tokenAuthorityPDA = execSync(`ntt solana token-authority ${programKeypairFile}`).toString().trim();
     
     // Set mint authority
     console.log('Setting mint authority...');
