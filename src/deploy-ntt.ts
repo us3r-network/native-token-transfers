@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { execSync } from 'child_process';
-import { existsSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { execSync } from 'node:child_process';
+import { existsSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 interface DeploymentConfig {
   projectName: string;
@@ -43,6 +43,24 @@ Example:
               --mode locking
   `);
   process.exit(1);
+}
+
+function checkPrerequisites() {
+  try {
+    // Check for required tools
+    execSync('which solana');
+    execSync('which spl-token');
+    execSync('which anchor');
+    execSync('which forge');
+    execSync('which ntt');
+  } catch (error) {
+    console.error('Missing required tools. Please install:');
+    console.error('- Solana CLI tools (solana, spl-token)');
+    console.error('- Anchor (https://www.anchor-lang.com/docs/installation)');
+    console.error('- Foundry (forge) (https://book.getfoundry.sh/getting-started/installation)');
+    console.error('- NTT CLI (https://wormhole.com/docs/build/contract-integrations/native-token-transfers/deployment-process/install-cli)');
+    process.exit(1);
+  }
 }
 
 function parseArgs(): DeploymentConfig {
@@ -99,8 +117,28 @@ function parseArgs(): DeploymentConfig {
   return config as DeploymentConfig;
 }
 
+async function prepareSolanaDeployment(config: DeploymentConfig) {
+  const { solanaToken, mode } = config;
+
+  // Generate program keypair if in burning mode
+  if (mode === 'burning') {
+    console.log('Generating program keypair for burning mode...');
+    execSync('solana-keygen grind --starts-with ntt:1 --ignore-case', { stdio: 'inherit' });
+    
+    // Get token authority PDA
+    const tokenAuthority = execSync(`ntt solana token-authority ${solanaToken}`).toString().trim();
+    
+    // Set mint authority
+    console.log('Setting mint authority...');
+    execSync(`spl-token authorize ${solanaToken} mint ${tokenAuthority}`, { stdio: 'inherit' });
+  }
+}
+
 async function deployNTT(config: DeploymentConfig) {
   const { projectName, baseToken, solanaToken, solanaPayer, mode = DEFAULT_CONFIG.mode } = config;
+
+  // Check prerequisites
+  checkPrerequisites();
 
   console.log(`Creating new NTT project: ${projectName}`);
   execSync(`ntt new ${projectName}`);
@@ -122,6 +160,9 @@ async function deployNTT(config: DeploymentConfig) {
   };
 
   writeFileSync('overrides.json', JSON.stringify(overrides, null, 2));
+
+  // Prepare Solana deployment
+  await prepareSolanaDeployment(config);
 
   console.log('Adding Solana chain...');
   execSync(
