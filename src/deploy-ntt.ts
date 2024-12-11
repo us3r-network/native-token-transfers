@@ -154,7 +154,7 @@ async function prepareSolanaDeployment(config: DeploymentConfig) {
     // Find the generated keypair file
     const programKeypairFile = await findNttKeypairFile();
     console.log('Program keypair file:', programKeypairFile);
-    const programKey = programKeypairFile.slice(0, -4);
+    const programKey = programKeypairFile.slice(0, -5);
     console.log('Program key:', programKey);
 
     // Get token authority PDA
